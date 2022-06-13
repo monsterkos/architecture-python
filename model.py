@@ -33,6 +33,15 @@ class Batch:
     def __hash__(self):
         return hash(self.ref)
 
+    # sorted() 함수를 사용하기 위해서 __gt__ 메서드가 구현되어야 함
+    # eta=None 이 가장 우선하며, 날짜가 빠를수록 먼저 할당된다는 도메인의 의미 표현
+    def __gt__(self, other):
+        if self.eta is None:
+            return False
+        if other.eta is None:
+            return True
+        return self.eta > other.eta
+
     def allocate(self, order_line: OrderLine) -> None:
         if self.can_allocate(order_line):
             self._allocated_orders.add(order_line)
@@ -51,3 +60,17 @@ class Batch:
     @property
     def allocated_quantity(self) -> int:
         return sum(line.qty for line in self._allocated_orders)
+
+
+# 여러 배치를 인자로 받는 allocate 함수 생성
+def allocate(order_line: OrderLine, batches: list[Batch]) -> str:
+    try:
+        batch = next(b for b in sorted(batches) if b.can_allocate(order_line))
+        batch.allocate(order_line)
+    except StopIteration as e:
+        raise OutOfStock(f"Out of stock for sku {order_line.sku}") from e
+    return batch.ref
+
+
+class OutOfStock(Exception):
+    ...
