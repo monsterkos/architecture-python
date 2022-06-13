@@ -1,4 +1,3 @@
-import uuid
 from dataclasses import dataclass
 from datetime import date
 
@@ -8,30 +7,30 @@ from datetime import date
     frozen=True
 )  # frozen=True 로 해당 객체를 불변 객체로 만들어주며, dict 키로 사용할 수 있고 set 에 add 할 수 있다.
 class OrderLine:
+    order_id: str
     sku: str
     qty: int
-    order_id: str = str(uuid.uuid4())
 
 
 # 엔티티 (entity) : 일부 값이 바뀌어도 특정 식별 값에 의해 동일하다고 판단할 수 있는 영속적인 정체성을 갖는 도메인 객체
 class Batch:
-    def __init__(self, sku: str, qty: int, eta: date | None = None):
-        self.ref: str = str(uuid.uuid4())
+    def __init__(self, reference: str, sku: str, qty: int, eta: date | None = None):
+        self.reference = reference
         self.sku = sku
-        self.purchased_quantity = qty
+        self._purchased_quantity = qty
         self.eta = eta
         self._allocated_orders: set[OrderLine] = set()
 
     def __repr__(self):
-        return f"Batch {self.ref}"
+        return f"Batch {self.reference}"
 
     def __eq__(self, other):
         if not isinstance(other, Batch):
             return False
-        return self.ref == other.ref
+        return self.reference == other.reference
 
     def __hash__(self):
-        return hash(self.ref)
+        return hash(self.reference)
 
     # sorted() 함수를 사용하기 위해서 __gt__ 메서드가 구현되어야 함
     # eta=None 이 가장 우선하며, 날짜가 빠를수록 먼저 할당된다는 도메인의 의미 표현
@@ -55,7 +54,7 @@ class Batch:
 
     @property
     def available_quantity(self) -> int:
-        return self.purchased_quantity - self.allocated_quantity
+        return self._purchased_quantity - self.allocated_quantity
 
     @property
     def allocated_quantity(self) -> int:
@@ -69,7 +68,7 @@ def allocate(order_line: OrderLine, batches: list[Batch]) -> str:
         batch.allocate(order_line)
     except StopIteration as e:
         raise OutOfStock(f"Out of stock for sku {order_line.sku}") from e
-    return batch.ref
+    return batch.reference
 
 
 class OutOfStock(Exception):
