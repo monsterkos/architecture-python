@@ -1,4 +1,4 @@
 [flake8]
 exclude = .venv, .idea, .pytest_cache, __pycache__, .git, .scripts/*, logs/*, docker/*, build/*
-max-line-length = 100
+max-line-length = 110
 per-file-ignores = test_domain_model.py: E501

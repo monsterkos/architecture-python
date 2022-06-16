@@ -3,11 +3,13 @@ from datetime import date
 
 
 # 값 객체 (value object) : 내부 데이터에 따라 식별되는 도메인 객체
-@dataclass(
-    frozen=True
-)  # frozen=True 로 해당 객체를 불변 객체로 만들어주며, dict 키로 사용할 수 있고 set 에 add 할 수 있다.
+# frozen=True 로 해당 객체를 불변 객체로 만들어주며, dict 키로 사용할 수 있고 set 에 add 할 수 있다.
+# @dataclass(
+#     frozen=True
+# )
+@dataclass(unsafe_hash=True)  # dataclass 를 hashable 하게 만들 수 있음
 class OrderLine:
-    order_id: str
+    orderid: str
     sku: str
     qty: int
 
@@ -49,7 +51,7 @@ class Batch:
         return self.sku == order_line.sku and self.available_quantity >= order_line.qty
 
     def deallocate(self, order_line: OrderLine) -> None:
-        if order_line.order_id in self._allocated_orders:
+        if order_line.orderid in self._allocated_orders:
             self._allocated_orders.remove(order_line)
 
     @property

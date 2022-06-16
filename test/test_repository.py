@@ -15,7 +15,7 @@ def test_repository_can_save_a_batch(session):
     assert list(rows) == [("batch1", "RUSTY-SOAPDISH", 100, None)]
 
 
-def insert_order_line(session) -> str:
+def insert_order_line(session) -> int:
     session.execute(
         "INSERT INTO order_lines (orderid, sku, qty)"
         ' VALUES ("order1", "GENERIC-SOFA", 12)'
@@ -27,12 +27,26 @@ def insert_order_line(session) -> str:
     return orderline_id
 
 
-def insert_batch(session, batch_id: str) -> str:
-    ...  # TODO
+def insert_batch(session, reference: str) -> int:
+    session.execute(
+        f"""
+        INSERT INTO batches (reference, sku, _purchased_quantity, eta)
+        VALUES ("{reference}", "GENERIC-SOFA", 100, NULL)
+        """
+    )
+    [[batch_id]] = session.execute(
+        f"SELECT id FROM batches WHERE reference ='{reference}' AND sku = 'GENERIC-SOFA'"
+    )
+    return batch_id
 
 
-def insert_allocation(session, batch_id: str, orderline_id: str) -> None:
-    ...  # TODO
+def insert_allocation(session, batch_id: int, orderline_id: int) -> None:
+    session.execute(
+        f"""
+        INSERT INTO allocations (orderline_id, batch_id)
+        VALUES ("{orderline_id}", "{batch_id}")
+        """
+    )
 
 
 def test_repository_can_retrieve_a_batch_with_allocations(session):
