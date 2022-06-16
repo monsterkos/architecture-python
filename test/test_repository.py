@@ -65,3 +65,8 @@ def test_repository_can_retrieve_a_batch_with_allocations(session):
     assert retrieved._allocated_orders == {
         model.OrderLine("order1", "GENERIC-SOFA", 12)
     }
+
+
+def test_adapters_are_subclass_of_port():
+    assert isinstance(repository.SqlAlchemyRepository, repository.AbstractRepository)
+    assert isinstance(repository.FakeRepository, repository.AbstractRepository)

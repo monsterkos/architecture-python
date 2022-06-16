@@ -1,10 +1,15 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from sqlalchemy.orm.session import Session
 
 import model
 
 
+# duck typing 을 이용한 추상 클래스와 서브 클래스 정의
+# ABC 를 상속받지 않아도 required methods 가 정의되어 있는지 여부로 판단
+# 상속으로 인한 coupling 을 줄일 수 있음
+# super() method 사용할 수 없음
+@runtime_checkable
 class AbstractRepository(Protocol):
     """
     port : 애플리케이션과 추상화하려는 대상 사이의 인터페이스
@@ -54,7 +59,7 @@ class SqlAlchemyRepository:
         # )
 
 
-class FakeRepository(AbstractRepository):
+class FakeRepository:
     """
     adapter
     Test 를 위한 가짜 repository 객체
