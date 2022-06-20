@@ -21,6 +21,9 @@ class AbstractRepository(Protocol):
     def get(self, reference: str) -> model.Batch:
         ...
 
+    def list(self) -> list[model.Batch]:
+        ...
+
 
 class SqlAlchemyRepository:
     """

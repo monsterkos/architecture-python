@@ -51,7 +51,7 @@ class Batch:
         return self.sku == order_line.sku and self.available_quantity >= order_line.qty
 
     def deallocate(self, order_line: OrderLine) -> None:
-        if order_line.orderid in self._allocated_orders:
+        if order_line in self._allocated_orders:
             self._allocated_orders.remove(order_line)
 
     @property
@@ -71,6 +71,11 @@ def allocate(order_line: OrderLine, batches: list[Batch]) -> str:
     except StopIteration as e:
         raise OutOfStock(f"Out of stock for sku {order_line.sku}") from e
     return batch.reference
+
+
+def deallocate(order_line: OrderLine, batches: list[Batch]) -> None:
+    for b in batches:
+        b.deallocate(order_line)
 
 
 class OutOfStock(Exception):

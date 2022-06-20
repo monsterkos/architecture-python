@@ -44,6 +44,7 @@ def start_mappers():
                 lines_mapper,
                 secondary=allocations,
                 collection_class=set,
+                cascade="all, delete-orphan",
             )
         },
     )
