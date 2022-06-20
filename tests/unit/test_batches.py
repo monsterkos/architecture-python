@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import pytest
 
-from model import OrderLine, Batch, allocate, OutOfStock
+from domain.model import OrderLine, Batch, allocate, OutOfStock
 
 """
 product(제품) 는 SKU 단위로 식별된다.

@@ -3,11 +3,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import config
-import model
-import orm
-import repository
-import services
-
+from domain import model
+from adapters import orm, repository
+from service_layer import services
 
 """
 플라스크 앱의 책임은 표준적인 웹 기능일 뿐이다. 요청 전 상태를 관리하고 POST 파라미터로부터 정보를 파싱하며

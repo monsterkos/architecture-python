@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, clear_mappers
 
-from orm import start_mappers, metadata
+from adapters.orm import start_mappers, metadata
 import config
 
 

@@ -2,7 +2,7 @@ from typing import Protocol, runtime_checkable
 
 from sqlalchemy.orm.session import Session
 
-import model
+from domain import model
 
 
 # duck typing 을 이용한 추상 클래스와 서브 클래스 정의

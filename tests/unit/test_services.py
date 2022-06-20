@@ -1,9 +1,8 @@
 import pytest
 
-import model
-from repository import FakeRepository
-import services
-
+from domain import model
+from adapters.repository import FakeRepository
+from service_layer import services
 
 """
 웹 기능에 대한 테스트는 E2E 로 구현하고, 오케스트레이션 관련 테스트는 서비스 계층을 대상으로 한다.
