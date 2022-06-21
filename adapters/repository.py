@@ -60,23 +60,3 @@ class SqlAlchemyRepository:
         # SELECT * FROM batches
         # """
         # )
-
-
-class FakeRepository:
-    """
-    adapter
-    Test 를 위한 가짜 repository 객체
-    가짜 객체를 만들기 어렵다면 추상화를 너무 복잡하게 설계했기 때문이다.
-    """
-
-    def __init__(self, batches: list[model.Batch]):
-        self._batches = set(batches)
-
-    def add(self, batch: model.Batch):
-        self._batches.add(batch)
-
-    def get(self, reference: str) -> model.Batch | None:
-        return next(b for b in self._batches if b.reference == reference)
-
-    def list(self) -> list[model.Batch]:
-        return list(self._batches)

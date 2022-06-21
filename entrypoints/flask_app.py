@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Flask, jsonify, request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -22,13 +23,19 @@ app = Flask(__name__)
 def allocate_endpoint():
     session = get_session()
     repo = repository.SqlAlchemyRepository(session)
-    line = model.OrderLine(
-        request.json["orderid"],
-        request.json["sku"],
-        request.json["qty"],
-    )
+    # line = model.OrderLine(
+    #     request.json["orderid"],
+    #     request.json["sku"],
+    #     request.json["qty"],
+    # )
     try:
-        batchref = services.allocate(line, repo, session)
+        batchref = services.allocate(
+            request.json["orderid"],
+            request.json["sku"],
+            request.json["qty"],
+            repo,
+            session,
+        )
     except (model.OutOfStock, services.InvalidSku) as e:
         return jsonify({"message": str(e)}), 400
 
@@ -39,10 +46,30 @@ def allocate_endpoint():
 def deallocate_endpoint():
     session = get_session()
     repo = repository.SqlAlchemyRepository(session)
-    line = model.OrderLine(
-        request.json["orderid"],
+    # line = model.OrderLine(
+    #     request.json["orderid"],
+    #     request.json["sku"],
+    #     request.json["qty"],
+    # )
+    services.deallocate(
+        request.json["orderid"], request.json["sku"], request.json["qty"], repo, session
+    )
+    return "OK", 200
+
+
+@app.route("/batch", methods=["POST"])
+def add_batch():
+    session = get_session()
+    repo = repository.SqlAlchemyRepository(session)
+    eta = request.json["eta"]
+    if eta is not None:
+        eta = datetime.fromisoformat(eta).date()
+    services.add_batch(
+        request.json["ref"],
         request.json["sku"],
         request.json["qty"],
+        eta,
+        repo,
+        session,
     )
-    services.deallocate(line, repo, session)
-    return 200
+    return "OK", 201
