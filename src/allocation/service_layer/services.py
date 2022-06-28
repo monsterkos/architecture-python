@@ -1,7 +1,7 @@
 from datetime import date
 
-from domain import model
-from adapters.repository import AbstractRepository
+from ..domain import model
+from .unit_of_work import AbstractUnitOfWork
 
 """
 오케스트레이션 : 저장소에서 데이터를 가져오고, 데이터베이스 상태에 따라 입력을 검증하며 오류를 처리하고, DB 에 커밋하는 작업을 포함
@@ -18,37 +18,31 @@ def is_valid_sku(sku: str, batches: list[model.Batch]) -> bool:
     return sku in {b.sku for b in batches}
 
 
-def allocate(
-    orderid: str, sku: str, qty: int, repo: AbstractRepository, session
-) -> str:
+def allocate(orderid: str, sku: str, qty: int, uow: AbstractUnitOfWork) -> str:
     """
     도메인으로부터 완전히 분리된 서비스 계층을 만들기 위해 도메인 객체(OrderLine) 가 아닌 원시 타입을 파라미터로 받음
     """
     line = model.OrderLine(orderid, sku, qty)
-    batches = repo.list()
-    if not is_valid_sku(line.sku, batches):
-        raise InvalidSku(f"Invalid sku {line.sku}")
-    batchref = model.allocate(line, batches)
-    session.commit()
+    with uow:
+        batches = uow.batches.list()
+        if not is_valid_sku(line.sku, batches):
+            raise InvalidSku(f"Invalid sku {line.sku}")
+        batchref = model.allocate(line, batches)
+        uow.commit()
     return batchref
 
 
 def add_batch(
-    ref: str,
-    sku: str,
-    qty: int,
-    eta: date | None,
-    repo: AbstractRepository,
-    session,
+    ref: str, sku: str, qty: int, eta: date | None, uow: AbstractUnitOfWork
 ) -> None:
-    repo.add(model.Batch(ref, sku, qty, eta))
-    session.commit()
+    with uow:
+        uow.batches.add(model.Batch(ref, sku, qty, eta))
+        uow.commit()
 
 
-def deallocate(
-    orderid: str, sku: str, qty: int, repo: AbstractRepository, session
-) -> None:
+def deallocate(orderid: str, sku: str, qty: int, uow: AbstractUnitOfWork) -> None:
     line = model.OrderLine(orderid, sku, qty)
-    batches = repo.list()
-    model.deallocate(line, batches)
-    session.commit()
+    with uow:
+        batches = uow.batches.list()
+        model.deallocate(line, batches)
+        uow.commit()

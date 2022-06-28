@@ -1,12 +1,10 @@
 from datetime import datetime
 from flask import Flask, jsonify, request
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-import config
-from domain import model
-from adapters import orm, repository
-from service_layer import services
+from src.allocation.domain import model
+from src.allocation.adapters import orm
+from src.allocation.service_layer import services
+from src.allocation.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 """
 플라스크 앱의 책임은 표준적인 웹 기능일 뿐이다. 요청 전 상태를 관리하고 POST 파라미터로부터 정보를 파싱하며
@@ -14,27 +12,18 @@ from service_layer import services
 도메인 로직은 도메인에 그대로 남는다.
 """
 
-orm.start_mappers()
-get_session = sessionmaker(bind=create_engine(config.get_postgres_uri()))
 app = Flask(__name__)
+orm.start_mappers()
 
 
 @app.route("/allocate", methods=["POST"])
 def allocate_endpoint():
-    session = get_session()
-    repo = repository.SqlAlchemyRepository(session)
-    # line = model.OrderLine(
-    #     request.json["orderid"],
-    #     request.json["sku"],
-    #     request.json["qty"],
-    # )
     try:
         batchref = services.allocate(
             request.json["orderid"],
             request.json["sku"],
             request.json["qty"],
-            repo,
-            session,
+            SqlAlchemyUnitOfWork(),
         )
     except (model.OutOfStock, services.InvalidSku) as e:
         return jsonify({"message": str(e)}), 400
@@ -44,23 +33,17 @@ def allocate_endpoint():
 
 @app.route("/deallocate", methods=["POST"])
 def deallocate_endpoint():
-    session = get_session()
-    repo = repository.SqlAlchemyRepository(session)
-    # line = model.OrderLine(
-    #     request.json["orderid"],
-    #     request.json["sku"],
-    #     request.json["qty"],
-    # )
     services.deallocate(
-        request.json["orderid"], request.json["sku"], request.json["qty"], repo, session
+        request.json["orderid"],
+        request.json["sku"],
+        request.json["qty"],
+        SqlAlchemyUnitOfWork(),
     )
     return "OK", 200
 
 
 @app.route("/batch", methods=["POST"])
 def add_batch():
-    session = get_session()
-    repo = repository.SqlAlchemyRepository(session)
     eta = request.json["eta"]
     if eta is not None:
         eta = datetime.fromisoformat(eta).date()
@@ -69,7 +52,6 @@ def add_batch():
         request.json["sku"],
         request.json["qty"],
         eta,
-        repo,
-        session,
+        SqlAlchemyUnitOfWork(),
     )
     return "OK", 201

@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
-import pytest
 
-from domain.model import OrderLine, Batch, allocate, OutOfStock
+from src.allocation.domain.model import OrderLine, Batch
 
 """
 product(제품) 는 SKU 단위로 식별된다.
@@ -48,7 +47,7 @@ tomorrow = datetime.today() + timedelta(days=1)
 later = datetime.today() + timedelta(days=5)
 
 
-class TestAllocation:
+class TestBatch:
     @staticmethod
     def test_allocating_to_a_batch_reduces_the_available_quantity():
         batch, order_line = make_temp_batch_and_order_line("SMALL-TABLE", 20, 2)
@@ -98,45 +97,3 @@ class TestAllocation:
         batch.deallocate(order_line)
 
         assert batch.available_quantity == 3
-
-    @staticmethod
-    def test_prefers_current_stock_batches_to_shipments():
-        in_stock_batch = Batch("batch-001", "RETRO-CLOCK", 100)
-        shipment_batch = Batch("batch-002", "RETRO-CLOCK", 100, eta=tomorrow)
-        order_line = OrderLine("order-001", "RETRO-CLOCK", 10)
-
-        allocate(order_line, [in_stock_batch, shipment_batch])
-
-        assert in_stock_batch.available_quantity == 90
-        assert shipment_batch.available_quantity == 100
-
-    @staticmethod
-    def test_perfers_earlier_batches():
-        earliest = Batch("batch-001", "MINIMALIST-SPOON", 100, eta=today)
-        medium = Batch("batch-002", "MINIMALIST-SPOON", 100, eta=tomorrow)
-        latest = Batch("batch-003", "MINIMALIST-SPOON", 100, eta=later)
-        order_line = OrderLine("order-001", "MINIMALIST-SPOON", 20)
-
-        allocate(order_line, [earliest, medium, latest])
-
-        assert earliest.available_quantity == 80
-        assert medium.available_quantity == 100
-        assert latest.available_quantity == 100
-
-    @staticmethod
-    def test_return_allocated_batch_reference():
-        in_stock_batch = Batch("batch-001", "HIGHBROW-POSTER", 100)
-        shipment_batch = Batch("batch-002", "HIGHBROW-POSTER", 100, eta=tomorrow)
-        order_line = OrderLine("order-001", "HIGHBROW-POSTER", 20)
-
-        allocation = allocate(order_line, [in_stock_batch, shipment_batch])
-
-        assert allocation == in_stock_batch.reference
-
-    @staticmethod
-    def test_raises_out_of_stock_exception():
-        batch, order_line = make_temp_batch_and_order_line("SMALL-FORK", 20, 20)
-        allocate(order_line, [batch])
-
-        with pytest.raises(OutOfStock, match="SMALL-FORK"):
-            allocate(OrderLine("order-001", "SMALL-FORK", qty=2), [batch])

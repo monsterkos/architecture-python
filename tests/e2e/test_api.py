@@ -2,7 +2,7 @@ import uuid
 import pytest
 import requests
 
-import config
+from src.allocation import config
 
 
 def random_hex() -> str:
@@ -19,42 +19,6 @@ def random_batchref(name: str | int = "") -> str:
 
 def random_orderid(name: str | int = "") -> str:
     return f"order-{name}-{random_hex()}"
-
-
-@pytest.mark.usefixtures("restart_api")
-def test_api_returns_allocation():
-    sku, othersku = random_sku(), random_sku("other")
-    earlybatch = random_batchref(1)
-    laterbatch = random_batchref(2)
-    otherbatch = random_batchref(3)
-    post_to_add_batch(laterbatch, sku, 100, "2022-06-16")
-    post_to_add_batch(earlybatch, sku, 100, "2022-06-15")
-    post_to_add_batch(otherbatch, othersku, 100, None)
-    data = {"orderid": random_orderid(), "sku": sku, "qty": 3}
-    url = config.get_api_url()
-    r = requests.post(f"{url}/allocate", json=data)
-    assert r.status_code == 201
-    assert r.json()["batchref"] == earlybatch
-
-
-@pytest.mark.usefixtures("restart_api")
-def test_allocations_are_persisted():
-    sku = random_sku()
-    batch1, batch2 = random_batchref(1), random_batchref(2)
-    order1, order2 = random_orderid(1), random_orderid(2)
-    post_to_add_batch(batch1, sku, 10, "2022-06-01")
-    post_to_add_batch(batch2, sku, 10, "2022-06-02")
-    line1 = {"orderid": order1, "sku": sku, "qty": 10}
-    line2 = {"orderid": order2, "sku": sku, "qty": 10}
-    url = config.get_api_url()
-
-    r = requests.post(f"{url}/allocate", json=line1)
-    assert r.status_code == 201
-    assert r.json()["batchref"] == batch1
-
-    r = requests.post(f"{url}/allocate", json=line2)
-    assert r.status_code == 201
-    assert r.json()["batchref"] == batch2
 
 
 """
@@ -81,6 +45,7 @@ def test_happy_path_returns_201_and_allocated_batch():
     assert r.json()["batchref"] == earlybatch
 
 
+@pytest.mark.usefixtures("postgres_db")
 @pytest.mark.usefixtures("restart_api")
 def test_unhappy_path_returns_400_and_error_message():
     unknown_sku, orderid = random_sku(), random_orderid()
@@ -91,6 +56,7 @@ def test_unhappy_path_returns_400_and_error_message():
     assert r.json()["message"] == f"Invalid sku {unknown_sku}"
 
 
+@pytest.mark.usefixtures("postgres_db")
 @pytest.mark.usefixtures("restart_api")
 def test_deallocate():
     sku = random_sku()

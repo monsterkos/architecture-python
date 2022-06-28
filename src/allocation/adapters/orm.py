@@ -1,7 +1,7 @@
 from sqlalchemy import Table, MetaData, Column, Integer, String, Date, ForeignKey
 from sqlalchemy.orm import mapper, relationship
 
-from domain import model
+from src.allocation.domain import model
 
 metadata = MetaData()
 
@@ -43,7 +43,6 @@ def start_mappers():
                 lines_mapper,
                 secondary=allocations,
                 collection_class=set,
-                cascade="all, delete-orphan",
             )
         },
     )

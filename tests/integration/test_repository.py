@@ -1,5 +1,5 @@
-from domain import model
-from adapters import repository
+from src.allocation.domain import model
+from src.allocation.adapters import repository
 
 
 def test_repository_can_save_a_batch(session):
@@ -69,4 +69,3 @@ def test_repository_can_retrieve_a_batch_with_allocations(session):
 
 def test_adapters_are_subclass_of_port():
     assert isinstance(repository.SqlAlchemyRepository, repository.AbstractRepository)
-    assert isinstance(repository.FakeRepository, repository.AbstractRepository)
